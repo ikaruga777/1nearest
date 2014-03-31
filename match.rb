@@ -17,20 +17,43 @@ def show_data(playdata)
 		puts track["exhaust"]["highscore"]
 	end
 end
+
+def show_winner(playdatas,index)
+	
+	winner_index = playdatas.each_with_index.max_by {|playdata,i|
+		playdata["profile"]["tracks"][index]["exhaust"]["highscore"].to_i
+	}.last
+	return playdatas[winner_index]["profile"]["name"]
+
+end
+
 def compare(playdatas)
 	if playdatas.count <= 1 then 
 		return
 	end	
 	playdatas.each do |playdata|
-		printf("%12s",playdata["profile"]["tracks"][1])
-	end
-	playdatas.each do |playdata|
 		printf("%12s",playdata["profile"]["name"])
 	end
 	puts ""
-	playdatas.each_with_index do |playdata,i|
-		printf("%12s", playdata["profile"]["tracks"][i]["exhaust"])
+	winners = Array.new()
+	scores = Array.new()
+	playdatas[0]["profile"]["tracks"].each_with_index do |track,index|
+		printf("%12s",track["title"])
+		puts ""
+		playdatas.each do |playdata|
+			score=playdata["profile"]["tracks"][index]["exhaust"]["highscore"]	
+			printf("%12s", score)
+			scores.push(score)
+		end
+		winner=show_winner(playdatas,index)
+		printf("%12s",winner)
+		winners.push(winner)
+		puts ""
 	end
+	playdatas.each_with_index do |playdata,i|
+		printf("%12s",winners.select{|p|p==playdata["profile"]["name"]}.count())
+	end
+	printf("%12s",winners.count())
 	puts ""
 #puts playdatas[1]["profile"]["tracks"]
 end
@@ -44,11 +67,11 @@ def main
 	playdatas= Array.new
 	users.each do |user|
 		playdatas.push(JSON.parse(getjson(user)))
-		playdatas.each do |playdata|
-			show_data(playdata)
-		end
+		#playdatas.each do |playdata|
+		#	show_data(playdata)
+		#end
 	end
-	#compare(playdatas)
+	compare(playdatas)
 end
 main()
 	
