@@ -5,58 +5,65 @@ require 'json'
 #require './near.rb'
 #users =  %w{ikaruga FM}
 
-
-def getjson(user)
-	uri = URI.parse('http://sdvx-s.coresv.com/user/'+ user +'.json')
-	getjson = Net::HTTP.get(uri)
-end
-def show_data(playdata)
-	puts playdata["profile"]["name"].to_s
-	playdata["profile"]["tracks"].each do|track|
-		puts track["title"]
-		puts track["exhaust"]["highscore"]
-	end
-end
-
-def show_winner(playdatas,index)
+class Playdatas
 	
-	winner_index = playdatas.each_with_index.max_by {|playdata,i|
-		playdata["profile"]["tracks"][index]["exhaust"]["highscore"].to_i
-	}.last
-	return playdatas[winner_index]["profile"]["name"]
-
-end
-
-def compare(playdatas)
-	if playdatas.count <= 1 then 
-		return
-	end	
-	playdatas.each do |playdata|
-		printf("%12s",playdata["profile"]["name"])
+	def initialize(users)
+		@datas = Array.new()
+		users.each do |user|
+			@datas << (JSON.parse(getjson(user)))
+		end	
 	end
-	puts ""
-	winners = Array.new()
-	scores = Array.new()
-	playdatas[0]["profile"]["tracks"].each_with_index do |track,index|
-		printf("%12s",track["title"])
-		puts ""
-		playdatas.each do |playdata|
-			score=playdata["profile"]["tracks"][index]["exhaust"]["highscore"]	
-			printf("%12s", score)
-			scores.push(score)
+	def getjson(user)
+		uri = URI.parse('http://sdvx-s.coresv.com/user/'+ user +'.json')
+		return Net::HTTP.get(uri)
+	end
+
+	def show_data(datas)
+		puts @datas["profile"]["name"].to_s
+		@datas["profile"]["tracks"].each do|track|
+			puts track["title"]
+			puts track["exhaust"]["highscore"]
 		end
-		winner=show_winner(playdatas,index)
-		printf("%12s",winner)
-		winners.push(winner)
+	end
+
+	def show_winner(index)
+		
+		winner_index = @datas.each_with_index.max_by {|data,i|
+			data["profile"]["tracks"][index]["exhaust"]["highscore"].to_i
+		}.last
+		return @datas[winner_index]["profile"]["name"]	
+	end
+	def compare()
+		if @datas.count <= 1 then 
+			return
+		end	
+		@datas.each do |data|
+			printf("%12s",data["profile"]["name"])
+		end
 		puts ""
+		winners = Array.new()
+		scores = Array.new()
+		@datas[0]["profile"]["tracks"].each_with_index do |track,index|
+			printf("%12s",track["title"])
+			puts ""
+			@datas.each do |data|
+				score=data["profile"]["tracks"][index]["exhaust"]["highscore"]	
+				printf("%12s", score)
+				scores.push(score)
+			end
+			winner=show_winner(index)
+			printf("%12s",winner)
+			winners.push(winner)
+			puts ""
+		end
+		@datas.each_with_index do |data,i|
+			printf("%12s",winners.select{|p|p==data["profile"]["name"]}.count())
+		end
+		printf("%12s",winners.count())
+		puts ""
+	#puts playdatas[1]["profile"]["tracks"]
 	end
-	playdatas.each_with_index do |playdata,i|
-		printf("%12s",winners.select{|p|p==playdata["profile"]["name"]}.count())
-	end
-	printf("%12s",winners.count())
-	puts ""
-#puts playdatas[1]["profile"]["tracks"]
-end
+end	
 
 def main
 	users = ARGV
@@ -64,14 +71,8 @@ def main
 		puts "input user names"
 		return
 	end
-	playdatas= Array.new
-	users.each do |user|
-		playdatas.push(JSON.parse(getjson(user)))
-		#playdatas.each do |playdata|
-		#	show_data(playdata)
-		#end
-	end
-	compare(playdatas)
+	playdatas = Playdatas.new(users)
+	playdatas.compare()
 end
 main()
 	
